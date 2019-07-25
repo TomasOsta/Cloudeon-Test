@@ -71,8 +71,8 @@ curl http://localhost:9100/metrics | grep "node_"
 
 
 
-#4th role. In this role, we are installing grafana of a specified version number. Copying configration file and restart grafana for it to start 
-using this new config file:
+#4th role. In this role, we are installing grafana of a specified version number. Copying configration file and restart grafana for
+it to start using this new config file:
 
 - name: "Restart the Grafana service."
   service:
