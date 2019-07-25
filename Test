@@ -1,0 +1,106 @@
+#Ansible_Playbook_Cloudeon.yml
+
+#1st Role. In this use case I will be selecting a virtual machine template and cloning it into a specific folder in Datacenter / Cluster.
+The following Ansible playbook showcases the basic parameters that are needed for this.
+
+---
+- name: Create a VM from a template
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - name: Clone the template
+    vmware_guest:
+      hostname: 192.0.2.44
+      username: administrator@vsphere.local
+      password: vmware
+      validate_certs: False
+      name: testvm_2
+      template: template_el7
+      datacenter: DC1
+      folder: /DC1/vm
+      state: poweredon
+      wait_for_ip_address: yes
+
+#2nd role. Setting up prometheus, grafana, alertmanager and node exporter.
+---
+- hosts: prometheus
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - prometheus
+
+- hosts: grafana
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - grafana 
+
+- hosts: alertmanager
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - alertmanager
+
+- hosts: node_exporter
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - prometheus_node_exporter
+    
+    
+#3rd role. Configuring node data exporter as the source of metrics for Prometheus. Downloading and installing Node Exporter:
+
+wget https://github.com/prometheus/node_exporter/releases/download/v*/node_exporter-*.*-amd64.tar.gz
+tar xvfz node_exporter-*.*-amd64.tar.gz
+cd node_exporter-*.*-amd64
+./node_exporter
+
+#Once the Node Exporter is installed and running, we can verify that metrics are being exported by cURLing the /metrics endpoint:
+
+curl http://localhost:9100/metrics
+
+#The Node Exporter is now exposing metrics that Prometheus can scrape, including a wide variety of system metrics further down in the 
+output (prefixed with node_). To view those metrics (along with help and type information):
+
+curl http://localhost:9100/metrics | grep "node_"
+
+
+
+#4th role. In this role, we are installing grafana of a specified version number. Copying configration file and restart grafana for it to start 
+using this new config file:
+
+- name: "Restart the Grafana service."
+  service:
+    name: grafana-server
+    state: restarted
+  listen: event_restart_grafana 
+  22  roles/grafana/tasks/main.yml 
+@@ -0,0 +1,22 @@
+- name: Install grafana
+  yum:
+    name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-{{ version }}-1.x86_64.rpm
+    state: latest
+
+- name: "Grafana configuration file copy"
+  template:
+    src: "grafana.conf.j2"
+    dest: /etc/grafana/grafana.ini
+  notify: event_restart_grafana
+
+- name: "Grafana server started"
+  service:
+    name: grafana-server
+    enabled: true
+    state: started
+
+- name: "Check if Grafana is accessible."
+  uri:
+    url: http://127.0.0.1:3000
+    method: GET
+    status_code: 200
+
