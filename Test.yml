@@ -24,22 +24,30 @@
 
 #2nd role. Setting up prometheus, grafana, alertmanager and node exporter.
 ---
-- name: Setting up promeheus
-  hosts: prometheus
-  become: yes
-  become_user: root
-  become_method: sudo
+- name: Set up prometheus
+  hosts: prom-01
+  gather_facts: true
+  user: centos
+  become: true
+  vars_files:
+  - ../group_vars/jhb.yml
+  - ../group_vars/prometheus.yml
+
   roles:
     - prometheus
+    - firewalld
+---
+- name: Set up grafana
+  hosts: prom-01
+  gather_facts: true
+  user: centos
+  become: true
+  vars_files:
+  - ../group_vars/jhb.yml
 
-- name: Setting up grafana
-  hosts: grafana
-  become: yes
-  become_user: root
-  become_method: sudo
   roles:
-    - grafana 
-
+    - grafana
+---
 - name: setting up alertmanager
   hosts: alertmanager
   become: yes
@@ -47,7 +55,7 @@
   become_method: sudo
   roles:
     - alertmanager
-
+---  
 - name setting up node exporter
   hosts: node_exporter
   become: yes
@@ -57,22 +65,58 @@
     - prometheus_node_exporter
     
     
-#3. Configuring node data exporter as the source of metrics for Prometheus. Downloading and installing Node Exporter:
+#3. Configuring prometheus as datasource for grafana:
 
-wget https://github.com/prometheus/node_exporter/releases/download/v*/node_exporter-*.*-amd64.tar.gz
-tar xvfz node_exporter-*.*-amd64.tar.gz
-cd node_exporter-*.*-amd64
-./node_exporter
+# config file version
+apiVersion: 1
 
-#Once the Node Exporter is installed and running, we can verify that metrics are being exported by cURLing the /metrics endpoint:
+# list of datasources that should be deleted from the database
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
 
-curl http://localhost:9100/metrics
-
-#The Node Exporter is now exposing metrics that Prometheus can scrape, including a wide variety of system metrics further down in the 
-output (prefixed with node_). To view those metrics (along with help and type information):
-
-curl http://localhost:9100/metrics | grep "node_"
-
+# list of datasources to insert/update depending
+# whats available in the database
+datasources:
+  # <string, required> name of the datasource. Required
+- name: Prometheus
+  # <string, required> datasource type. Required
+  type: prometheus
+  # <string, required> access mode. direct or proxy. Required
+  access: proxy
+  # <int> org id. will default to orgId 1 if not specified
+  orgId: 1
+  # <string> url
+  url: http://prometheus:9090
+  # <string> database password, if used
+  password:
+  # <string> database user, if used
+  user:
+  # <string> database name, if used
+  database:
+  # <bool> enable/disable basic auth
+  basicAuth: true
+  # <string> basic auth username
+  basicAuthUser: admin
+  # <string> basic auth password
+  basicAuthPassword: foobar
+  # <bool> enable/disable with credentials headers
+  withCredentials:
+  # <bool> mark as default datasource. Max one per org
+  isDefault:
+  # <map> fields that will be converted to json and stored in json_data
+  jsonData:
+     graphiteVersion: "1.1"
+     tlsAuth: false
+     tlsAuthWithCACert: false
+  # <string> json object of data that will be encrypted.
+  secureJsonData:
+    tlsCACert: "..."
+    tlsClientCert: "..."
+    tlsClientKey: "..."
+  version: 1
+  # <bool> allow users to edit datasources from the UI.
+  editable: true
 
 
 #4. In this role, we are installing grafana of a specified version number:
