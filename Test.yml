@@ -1,7 +1,7 @@
 #Ansible_Playbook_Cloudeon.yml
 
 #1. In this use case I will be selecting a virtual machine template and cloning it into a specific folder in Datacenter / Cluster.
-The following Ansible playbook showcases the basic parameters that are needed for this.
+#The following Ansible playbook showcases the basic parameters that are needed for this.
 
 ---
 - name: Create a VM from a template
@@ -57,7 +57,7 @@ The following Ansible playbook showcases the basic parameters that are needed fo
     - prometheus_node_exporter
     
     
-#3rd role. Configuring node data exporter as the source of metrics for Prometheus. Downloading and installing Node Exporter:
+#3. Configuring node data exporter as the source of metrics for Prometheus. Downloading and installing Node Exporter:
 
 wget https://github.com/prometheus/node_exporter/releases/download/v*/node_exporter-*.*-amd64.tar.gz
 tar xvfz node_exporter-*.*-amd64.tar.gz
