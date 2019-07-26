@@ -1,6 +1,6 @@
 #Ansible_Playbook_Cloudeon.yml
 
-#1st Role. In this use case I will be selecting a virtual machine template and cloning it into a specific folder in Datacenter / Cluster.
+#1. In this use case I will be selecting a virtual machine template and cloning it into a specific folder in Datacenter / Cluster.
 The following Ansible playbook showcases the basic parameters that are needed for this.
 
 ---
@@ -24,28 +24,32 @@ The following Ansible playbook showcases the basic parameters that are needed fo
 
 #2nd role. Setting up prometheus, grafana, alertmanager and node exporter.
 ---
-- hosts: prometheus
+- name: Setting up promeheus
+  hosts: prometheus
   become: yes
   become_user: root
   become_method: sudo
   roles:
     - prometheus
 
-- hosts: grafana
+- name: Setting up grafana
+  hosts: grafana
   become: yes
   become_user: root
   become_method: sudo
   roles:
     - grafana 
 
-- hosts: alertmanager
+- name: setting up alertmanager
+  hosts: alertmanager
   become: yes
   become_user: root
   become_method: sudo
   roles:
     - alertmanager
 
-- hosts: node_exporter
+- name setting up node exporter
+  hosts: node_exporter
   become: yes
   become_user: root
   become_method: sudo
@@ -71,8 +75,7 @@ curl http://localhost:9100/metrics | grep "node_"
 
 
 
-#4th role. In this role, we are installing grafana of a specified version number. Copying configration file and restart grafana for
-it to start using this new config file:
+#4. In this role, we are installing grafana of a specified version number:
 
 - name: "Restart the Grafana service."
   service:
@@ -80,7 +83,7 @@ it to start using this new config file:
     state: restarted
   listen: event_restart_grafana 
   22  roles/grafana/tasks/main.yml 
-@@ -0,0 +1,22 @@
+
 - name: Install grafana
   yum:
     name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-{{ version }}-1.x86_64.rpm
