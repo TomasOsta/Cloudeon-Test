@@ -119,35 +119,7 @@ datasources:
   editable: true
 
 
-#4. In this role, we are installing grafana of a specified version number:
+#4. In this role, I am configuring node data exporter as the source of metrics for Prometheus:
 
-- name: "Restart the Grafana service."
-  service:
-    name: grafana-server
-    state: restarted
-  listen: event_restart_grafana 
-  22  roles/grafana/tasks/main.yml 
 
-- name: Install grafana
-  yum:
-    name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-{{ version }}-1.x86_64.rpm
-    state: latest
-
-- name: "Grafana configuration file copy"
-  template:
-    src: "grafana.conf.j2"
-    dest: /etc/grafana/grafana.ini
-  notify: event_restart_grafana
-
-- name: "Grafana server started"
-  service:
-    name: grafana-server
-    enabled: true
-    state: started
-
-- name: "Check if Grafana is accessible."
-  uri:
-    url: http://127.0.0.1:3000
-    method: GET
-    status_code: 200
 
